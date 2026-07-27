@@ -13,7 +13,11 @@ print("Whisper Model loaded successfully!")
 
 EXPANDED_VOICE_POOL = [
     "en-US-ChristopherNeural", "en-US-GuyNeural", "en-US-EricNeural",
-    "en-US-JennyNeural", "en-US-AriaNeural", "en-US-AnaNeural"
+    "en-US-RogerNeural", "en-GB-RyanNeural", "en-AU-WilliamNeural",
+    "en-US-JennyNeural", "en-US-AriaNeural", "en-US-MichelleNeural",
+    "en-GB-SoniaNeural", "en-AU-NatashaNeural", "en-US-AnaNeural",
+    "en-US-SteffanNeural", "en-US-AndrewNeural", "en-US-EmmaNeural",
+    "en-US-BrianNeural"
 ]
 
 @app.route('/')
@@ -21,7 +25,7 @@ def home():
     return send_from_directory('.', 'index.html')
 
 # ------------------------------------------------------------------
-# Multi-Voice + Automated Lip-Sync Pipeline
+# Multi-Voice Pipeline
 # ------------------------------------------------------------------
 @app.route('/process-video', methods=['POST'])
 def process_video():
@@ -33,25 +37,23 @@ def process_video():
         input_video_path = os.path.join(OUTPUT_DIR, "input.mp4")
         output_audio_path = os.path.join(OUTPUT_DIR, "output.mp3")
         merged_audio_path = os.path.join(OUTPUT_DIR, "combined_speech.mp3")
-        temp_dubbed_video = os.path.join(OUTPUT_DIR, "temp_dubbed.mp4")
-        final_lipsynced_video = os.path.join(OUTPUT_DIR, "final_dubbed.mp4")
+        output_dubbed_video = os.path.join(OUTPUT_DIR, "final_dubbed.mp4")
         
         segment_files = []
 
-        for fpath in [final_lipsynced_video, temp_dubbed_video]:
-            if os.path.exists(fpath):
-                os.remove(fpath)
+        if os.path.exists(output_dubbed_video):
+            os.remove(output_dubbed_video)
         
         with open(input_video_path, "wb") as f:
             f.write(request.data)
             
         # Step 1: Extract Audio
-        print("\n[1/5] Extracting audio stream...")
+        print("\n[1/4] Extracting audio stream...")
         ffmpeg_extract = f'ffmpeg -y -i "{input_video_path}" -vn -ac 1 -ar 16000 "{output_audio_path}"'
         subprocess.run(ffmpeg_extract, shell=True, check=True)
 
         # Step 2: Transcribe & Segment Dialogue
-        print("[2/5] Analyzing dialogue and assigning voices...")
+        print("[2/4] Analyzing dialogue lines...")
         result = whisper_model.transcribe(output_audio_path, task="translate")
         segments = result.get('segments', [])
 
@@ -60,7 +62,8 @@ def process_video():
 
         full_text_log = []
 
-        # Step 3: Multi-Speaker TTS Generation
+        # Step 3: Dynamic Multi-Speaker Voice Assignment
+        print("[3/4] Synthesizing distinct voice tracks for each speaker...")
         for idx, seg in enumerate(segments):
             text = seg['text'].strip()
             if not text:
@@ -73,7 +76,8 @@ def process_video():
             subprocess.run(tts_cmd, shell=True, check=True)
             segment_files.append(seg_audio_path)
             
-            full_text_log.append(f"<b>[Speaker {idx + 1} - {voice.split('-')[2]}]:</b> {text}")
+            speaker_num = (idx % len(EXPANDED_VOICE_POOL)) + 1
+            full_text_log.append(f"<b>[Speaker {speaker_num} - {voice.split('-')[2]}]:</b> {text}")
 
         # Combine audio tracks
         concat_list_path = os.path.join(OUTPUT_DIR, "concat_list.txt")
@@ -84,36 +88,15 @@ def process_video():
         concat_cmd = f'ffmpeg -y -f concat -safe 0 -i "{concat_list_path}" -c copy "{merged_audio_path}"'
         subprocess.run(concat_cmd, shell=True, check=True)
 
-       # Step 4: Stitch multi-voice audio back into video
-        print(f"[4/4] Stitching multi-voice track into final video...")
+        # Step 4: Stitch Audio and Video
+        print("[4/4] Merging audio with original video stream...")
         merge_cmd = f'ffmpeg -y -i "{input_video_path}" -i "{merged_audio_path}" -c:v copy -c:a aac -map 0:v -map 1:a -shortest "{output_dubbed_video}"'
         subprocess.run(merge_cmd, shell=True, check=True)
 
-        # === NEW AUTO-CLEANUP ROUTINE ===
-        print("Cleaning up intermediate audio/video segments to save disk space...")
-        # Delete temporary segment files
-        for seg_file in segment_files:
-            if os.path.exists(seg_file):
-                os.remove(seg_file)
-        
-        # Delete extra temporary files
-        for temp_file in [output_audio_path, merged_audio_path, concat_list_path]:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-        # ================================
-
-        latest_translation = "<br>".join(full_text_log)
-        print("[SUCCESS]: Multi-speaker dubbing complete and storage cleaned!\n")
-
-        # Step 5: AI Lip-Sync Pass (Wav2Lip)
-        checkpoint_path = os.path.join(OUTPUT_DIR, "wav2lip.pth")
-        if os.path.exists(checkpoint_path):
-            print("[5/5] Applying AI Lip-Syncing model (Wav2Lip)...")
-            lipsync_cmd = f'python inference.py --checkpoint_path "{checkpoint_path}" --face "{input_video_path}" --audio "{merged_audio_path}" --outfile "{final_lipsynced_video}"'
-            subprocess.run(lipsync_cmd, shell=True, check=True)
-        else:
-            print("[5/5] Wav2Lip model checkpoint not found. Using standard audio overlay.")
-            os.rename(temp_dubbed_video, final_lipsynced_video)
+        # Cleanup intermediate segment files
+        for seg_f in segment_files:
+            if os.path.exists(seg_f):
+                os.remove(seg_f)
 
         latest_translation = "<br>".join(full_text_log)
         print("[SUCCESS]: Processing complete!\n")
