@@ -148,7 +148,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             padding: 15px;
-            height: 180px;
+            height: 150px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 0.9rem;
@@ -161,13 +161,13 @@
             width: 100%;
             text-align: center;
             padding: 12px 0;
-            margin-top: 15px;
+            margin-top: 10px;
             background: rgba(0, 242, 254, 0.15);
             border: 1px solid var(--accent-cyan);
             color: var(--accent-cyan);
             border-radius: 8px;
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             text-decoration: none;
             font-weight: bold;
             box-sizing: border-box;
@@ -198,8 +198,8 @@
 
             <div class="section-title" style="margin-top: 25px;">2. CHOOSE TARGET DESTINATION DIALECT</div>
             <select id="languageSelect">
-                <option value="English">English</option>
                 <option value="Telugu">Telugu (తెలుగు)</option>
+                <option value="English">English</option>
             </select>
 
             <button class="btn" onclick="startTransmutation()">INITIATE TRANSMUTATION</button>
@@ -210,15 +210,21 @@
             <div class="section-title">SYSTEM TRANSMUTATION OUTPUT</div>
             <div id="statusTag" class="status-tag">STATUS: IDLE</div>
 
+            <!-- Video Player playing dubbed video -->
             <video id="videoPlayer" controls></video>
 
             <div class="log-box" id="transcriptionLog">
                 [Awaiting input stream...]
             </div>
 
-            <!-- Download Button for Translated Audio MP3 -->
-            <a id="downloadAudioBtn" href="/get-audio" download="translated_audio.mp3" class="download-btn">
-                🎵 DOWNLOAD TRANSLATED AUDIO (.MP3)
+            <!-- Download Button for Translated Video (.mp4) -->
+            <a id="downloadVideoBtn" href="/get-video" download="final_dubbed_video.mp4" class="download-btn">
+                🎬 DOWNLOAD DUBBED VIDEO (.MP4)
+            </a>
+
+            <!-- Download Button for Translated Audio (.mp3) -->
+            <a id="downloadAudioBtn" href="/get-audio" download="translated_audio_female.mp3" class="download-btn">
+                🎵 DOWNLOAD DUBBED AUDIO (.MP3)
             </a>
         </div>
     </div>
@@ -239,7 +245,8 @@
         const statusTag = document.getElementById('statusTag');
         const logBox = document.getElementById('transcriptionLog');
         const videoPlayer = document.getElementById('videoPlayer');
-        const downloadBtn = document.getElementById('downloadAudioBtn');
+        const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+        const downloadAudioBtn = document.getElementById('downloadAudioBtn');
 
         if (fileInput.files.length === 0) {
             alert("Please select a video file first!");
@@ -248,9 +255,10 @@
 
         statusTag.innerText = "STATUS: PROCESSING PIPELINE ACTIVE";
         statusTag.style.color = "#FFB000";
-        logBox.innerHTML = "Processing audio extraction, Whisper AI transcription, " + selectedLang + " translation, and multi-voice TTS...";
+        logBox.innerHTML = "Processing audio extraction, Whisper AI transcription, " + selectedLang + " translation, and female multi-voice TTS...";
         videoPlayer.style.display = "none";
-        downloadBtn.style.display = "none";
+        downloadVideoBtn.style.display = "none";
+        downloadAudioBtn.style.display = "none";
 
         try {
             const response = await fetch('/process-video', {
@@ -280,7 +288,8 @@
         const statusTag = document.getElementById('statusTag');
         const logBox = document.getElementById('transcriptionLog');
         const videoPlayer = document.getElementById('videoPlayer');
-        const downloadBtn = document.getElementById('downloadAudioBtn');
+        const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+        const downloadAudioBtn = document.getElementById('downloadAudioBtn');
 
         try {
             const res = await fetch('/get-result');
@@ -294,10 +303,11 @@
                 if (data.has_video) {
                     videoPlayer.src = "/get-video?t=" + new Date().getTime();
                     videoPlayer.style.display = "block";
+                    downloadVideoBtn.style.display = "block";
                 }
 
                 if (data.has_audio) {
-                    downloadBtn.style.display = "block";
+                    downloadAudioBtn.style.display = "block";
                 }
             }
         } catch (err) {

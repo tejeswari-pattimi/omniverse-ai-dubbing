@@ -30,7 +30,7 @@ def home():
     return send_from_directory('.', 'index.html')
 
 # ------------------------------------------------------------------
-# Female-Only Multi-Language Video Dubbing Pipeline
+# Video Dubbing Pipeline (Replaces Video Audio & Synthesizes Dub)
 # ------------------------------------------------------------------
 @app.route('/process-video', methods=['POST'])
 def process_video():
@@ -49,6 +49,7 @@ def process_video():
         
         segment_files = []
 
+        # Remove previous output video if exists
         if os.path.exists(output_dubbed_video):
             os.remove(output_dubbed_video)
         
@@ -71,7 +72,7 @@ def process_video():
         full_text_log = []
         voice_pool = VOICE_POOLS.get(target_lang, VOICE_POOLS["Telugu"])
 
-        # Step 3: Translate & Synthesize Female Audio
+        # Step 3: Translate & Synthesize Audio
         print(f"[3/4] Translating and synthesizing female voice tracks in {target_lang}...")
         for idx, seg in enumerate(segments):
             original_text = seg['text'].strip()
@@ -109,9 +110,9 @@ def process_video():
         concat_cmd = f'ffmpeg -y -f concat -safe 0 -i "{concat_list_path}" -c copy "{merged_audio_path}"'
         subprocess.run(concat_cmd, shell=True, check=True)
 
-        # Step 4: Stitch Audio and Video
-        print("[4/4] Merging female dubbed audio with video...")
-        merge_cmd = f'ffmpeg -y -i "{input_video_path}" -i "{merged_audio_path}" -c:v copy -c:a aac "{output_dubbed_video}"'
+        # Step 4: Map Video Stream + New Dubbed Audio Stream (Replaces original English audio)
+        print("[4/4] Replacing original audio track with dubbed audio in video...")
+        merge_cmd = f'ffmpeg -y -i "{input_video_path}" -i "{merged_audio_path}" -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -shortest "{output_dubbed_video}"'
         subprocess.run(merge_cmd, shell=True, check=True)
 
         # Cleanup temporary audio segments
@@ -143,7 +144,7 @@ def get_result():
 def get_video():
     dubbed_video_path = os.path.join(OUTPUT_DIR, "final_dubbed.mp4")
     if os.path.exists(dubbed_video_path):
-        return send_file(dubbed_video_path, mimetype='video/mp4')
+        return send_file(dubbed_video_path, mimetype='video/mp4', as_attachment=True, download_name='final_dubbed_video.mp4')
     return jsonify({"error": "Video file not found"}), 404
 
 @app.route('/get-audio', methods=['GET'])
