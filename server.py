@@ -12,15 +12,14 @@ print("Loading Universal Whisper AI Speech Model...")
 whisper_model = whisper.load_model("small")
 print("Whisper Model loaded successfully!")
 
-# Multi-Language Voice Pools
+# Multi-Language Voice Pools (Exclusively Female Voices)
 VOICE_POOLS = {
     "English": [
-        "en-US-ChristopherNeural", "en-US-GuyNeural", "en-US-EricNeural",
-        "en-US-RogerNeural", "en-GB-RyanNeural", "en-AU-WilliamNeural",
-        "en-US-JennyNeural", "en-US-AriaNeural", "en-US-MichelleNeural"
+        "en-US-JennyNeural", "en-US-AriaNeural", "en-US-MichelleNeural",
+        "en-GB-SoniaNeural", "en-AU-NatashaNeural", "en-US-AnaNeural"
     ],
     "Telugu": [
-        "te-IN-MohanNeural", "te-IN-ShrutiNeural"
+        "te-IN-ShrutiNeural"  # Female Telugu Voice
     ]
 }
 
@@ -31,7 +30,7 @@ def home():
     return send_from_directory('.', 'index.html')
 
 # ------------------------------------------------------------------
-# Multi-Voice & Multi-Language Video Dubbing Pipeline
+# Female-Only Multi-Language Video Dubbing Pipeline
 # ------------------------------------------------------------------
 @app.route('/process-video', methods=['POST'])
 def process_video():
@@ -40,7 +39,7 @@ def process_video():
         if not request.data:
             return jsonify({"error": "No binary data received"}), 400
         
-        target_lang = request.headers.get('Target-Language', 'English')
+        target_lang = request.headers.get('Target-Language', 'Telugu')
         print(f"\n[TARGET LANGUAGE]: {target_lang}")
 
         input_video_path = os.path.join(OUTPUT_DIR, "input.mp4")
@@ -70,10 +69,10 @@ def process_video():
             return jsonify({"status": "success", "message": "No speech found."}), 200
 
         full_text_log = []
-        voice_pool = VOICE_POOLS.get(target_lang, VOICE_POOLS["English"])
+        voice_pool = VOICE_POOLS.get(target_lang, VOICE_POOLS["Telugu"])
 
-        # Step 3: Translate & Synthesize Audio
-        print(f"[3/4] Translating and synthesizing voice tracks in {target_lang}...")
+        # Step 3: Translate & Synthesize Female Audio
+        print(f"[3/4] Translating and synthesizing female voice tracks in {target_lang}...")
         for idx, seg in enumerate(segments):
             original_text = seg['text'].strip()
             if not original_text:
@@ -99,7 +98,7 @@ def process_video():
             segment_files.append(seg_audio_path)
             
             speaker_num = (idx % len(voice_pool)) + 1
-            full_text_log.append(f"<b>[Speaker {speaker_num} - {voice.split('-')[2]}]:</b> {translated_text}")
+            full_text_log.append(f"<b>[Speaker {speaker_num} - Female Voice ({voice.split('-')[2]})]:</b> {translated_text}")
 
         # Combine synthesized audio clips
         concat_list_path = os.path.join(OUTPUT_DIR, "concat_list.txt")
@@ -111,7 +110,7 @@ def process_video():
         subprocess.run(concat_cmd, shell=True, check=True)
 
         # Step 4: Stitch Audio and Video
-        print("[4/4] Merging audio with original video container...")
+        print("[4/4] Merging female dubbed audio with video...")
         merge_cmd = f'ffmpeg -y -i "{input_video_path}" -i "{merged_audio_path}" -c:v copy -c:a aac "{output_dubbed_video}"'
         subprocess.run(merge_cmd, shell=True, check=True)
 
@@ -151,7 +150,7 @@ def get_video():
 def get_audio():
     merged_audio_path = os.path.join(OUTPUT_DIR, "combined_speech.mp3")
     if os.path.exists(merged_audio_path):
-        return send_file(merged_audio_path, mimetype='audio/mpeg', as_attachment=True, download_name='translated_audio.mp3')
+        return send_file(merged_audio_path, mimetype='audio/mpeg', as_attachment=True, download_name='translated_audio_female.mp3')
     return jsonify({"error": "Audio file not found"}), 404
 
 if __name__ == '__main__':
