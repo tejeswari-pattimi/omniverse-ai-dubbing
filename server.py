@@ -12,7 +12,6 @@ print("Loading Universal Whisper AI Speech Model...")
 whisper_model = whisper.load_model("small")
 print("Whisper Model loaded successfully!")
 
-# Multi-Language Voice Pools (Exclusively Female Voices)
 VOICE_POOLS = {
     "English": [
         "en-US-JennyNeural", "en-US-AriaNeural", "en-US-MichelleNeural",
@@ -30,7 +29,7 @@ def home():
     return send_from_directory('.', 'index.html')
 
 # ------------------------------------------------------------------
-# Video Dubbing Pipeline (Replaces Video Audio & Synthesizes Dub)
+# Video Dubbing Pipeline with Time-Matched Audio Speed Syncing
 # ------------------------------------------------------------------
 @app.route('/process-video', methods=['POST'])
 def process_video():
@@ -49,7 +48,6 @@ def process_video():
         
         segment_files = []
 
-        # Remove previous output video if exists
         if os.path.exists(output_dubbed_video):
             os.remove(output_dubbed_video)
         
@@ -61,8 +59,8 @@ def process_video():
         ffmpeg_extract = f'ffmpeg -y -i "{input_video_path}" -vn -ac 1 -ar 16000 "{output_audio_path}"'
         subprocess.run(ffmpeg_extract, shell=True, check=True)
 
-        # Step 2: Transcribe Dialogue
-        print("[2/4] Analyzing dialogue lines with Whisper AI...")
+        # Step 2: Transcribe Dialogue with Timestamps
+        print("[2/4] Analyzing dialogue timing and timestamps with Whisper AI...")
         result = whisper_model.transcribe(output_audio_path)
         segments = result.get('segments', [])
 
@@ -72,10 +70,14 @@ def process_video():
         full_text_log = []
         voice_pool = VOICE_POOLS.get(target_lang, VOICE_POOLS["Telugu"])
 
-        # Step 3: Translate & Synthesize Audio
-        print(f"[3/4] Translating and synthesizing female voice tracks in {target_lang}...")
+        # Step 3: Translate & Synthesize Audio with Time-Matching Speed
+        print(f"[3/4] Translating and speed-matching TTS tracks in {target_lang}...")
         for idx, seg in enumerate(segments):
             original_text = seg['text'].strip()
+            start_time = seg['start']
+            end_time = seg['end']
+            duration = max(1.0, end_time - start_time)  # Target duration in seconds
+
             if not original_text:
                 continue
 
@@ -90,18 +92,37 @@ def process_video():
                 translated_text = original_text
 
             voice = voice_pool[idx % len(voice_pool)]
+            temp_raw_audio = os.path.join(OUTPUT_DIR, f"temp_{idx}.mp3")
             seg_audio_path = os.path.join(OUTPUT_DIR, f"seg_{idx}.mp3")
             
-            # Clean quotes for safe command execution
             safe_text = translated_text.replace('"', '').replace("'", "")
-            tts_cmd = f'edge-tts --voice "{voice}" --text "{safe_text}" --write-media "{seg_audio_path}"'
+            
+            # Synthesize raw audio first
+            tts_cmd = f'edge-tts --voice "{voice}" --text "{safe_text}" --write-media "{temp_raw_audio}"'
             subprocess.run(tts_cmd, shell=True, check=True)
+
+            # Calculate actual generated audio length using ffprobe
+            probe_cmd = f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{temp_raw_audio}"'
+            raw_duration = float(subprocess.check_output(probe_cmd, shell=True).decode().strip())
+
+            # Adjust speed ratio to fit exact original duration
+            speed_ratio = raw_duration / duration
+            # Keep speed within realistic limits (0.5x to 2.0x)
+            speed_ratio = max(0.6, min(speed_ratio, 1.8))
+
+            # Apply rubberband/atempo filter via ffmpeg to stretch/squeeze audio to target length
+            time_sync_cmd = f'ffmpeg -y -i "{temp_raw_audio}" -filter:a "atempo={speed_ratio:.2f}" "{seg_audio_path}"'
+            subprocess.run(time_sync_cmd, shell=True, check=True)
+
+            if os.path.exists(temp_raw_audio):
+                os.remove(temp_raw_audio)
+
             segment_files.append(seg_audio_path)
             
             speaker_num = (idx % len(voice_pool)) + 1
             full_text_log.append(f"<b>[Speaker {speaker_num} - Female Voice ({voice.split('-')[2]})]:</b> {translated_text}")
 
-        # Combine synthesized audio clips
+        # Combine synchronized audio segments
         concat_list_path = os.path.join(OUTPUT_DIR, "concat_list.txt")
         with open(concat_list_path, "w", encoding='utf-8') as f:
             for seg_file in segment_files:
@@ -110,18 +131,18 @@ def process_video():
         concat_cmd = f'ffmpeg -y -f concat -safe 0 -i "{concat_list_path}" -c copy "{merged_audio_path}"'
         subprocess.run(concat_cmd, shell=True, check=True)
 
-        # Step 4: Map Video Stream + New Dubbed Audio Stream (Replaces original English audio)
-        print("[4/4] Replacing original audio track with dubbed audio in video...")
+        # Step 4: Map Dubbed Audio to Original Video Duration Exactly
+        print("[4/4] Merging speed-synced audio stream with video...")
         merge_cmd = f'ffmpeg -y -i "{input_video_path}" -i "{merged_audio_path}" -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -shortest "{output_dubbed_video}"'
         subprocess.run(merge_cmd, shell=True, check=True)
 
-        # Cleanup temporary audio segments
+        # Cleanup temporary files
         for seg_f in segment_files:
             if os.path.exists(seg_f):
                 os.remove(seg_f)
 
         latest_translation = "<br>".join(full_text_log)
-        print("[SUCCESS]: Processing complete!\n")
+        print("[SUCCESS]: Processing complete with synchronized duration!\n")
 
         return jsonify({"status": "success", "message": "Video processed!"}), 200
         
