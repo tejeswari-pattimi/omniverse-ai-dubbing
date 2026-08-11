@@ -3,56 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OMNIVERSE | Universal Video Interpreter</title>
+    <title>OMNIVERSE | Universal Video Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-glow: radial-gradient(circle at 50% 50%, #141529 0%, #070814 100%);
-            --neon-cyan: #00f2fe;
-            --neon-purple: #4facfe;
-            --glass-panel: rgba(25, 27, 49, 0.4);
-            --border-glow: rgba(0, 242, 254, 0.2);
+            --bg-color: #0B0E14;
+            --card-bg: #121824;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --text-main: #E2E8F0;
+            --text-muted: #64748B;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-
         body {
-            background: var(--bg-glow);
-            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #ffffff;
-            overflow-x: hidden;
-            padding: 20px;
+            min-height: 100vh;
         }
 
         .container {
             width: 100%;
-            max-width: 1050px;
-            background: var(--glass-panel);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-glow);
-            border-radius: 24px;
+            max-width: 950px;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(79, 172, 254, 0.1);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 242, 254, 0.1);
         }
 
-        header {
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.8rem;
             text-align: center;
-            margin-bottom: 35px;
-        }
-
-        header h1 {
-            font-size: 2.5rem;
-            letter-spacing: 4px;
-            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
+            letter-spacing: 3px;
+            margin: 0;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
-            font-weight: 800;
         }
 
-        header p { color: #8a8fbc; font-size: 0.95rem; margin-top: 8px; letter-spacing: 1px; }
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-top: 5px;
+            margin-bottom: 40px;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
 
         .grid {
             display: grid;
@@ -60,224 +64,247 @@
             gap: 30px;
         }
 
-        .panel-left, .panel-right {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
         }
 
-        label {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--neon-cyan);
-            font-weight: 600;
-        }
-
-        .upload-zone {
+        .upload-box {
             border: 2px dashed rgba(0, 242, 254, 0.3);
-            border-radius: 16px;
-            padding: 40px 20px;
+            border-radius: 10px;
+            padding: 30px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.4s ease;
-            background: rgba(7, 8, 20, 0.3);
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
         }
 
-        .upload-zone:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
-            background: rgba(7, 8, 20, 0.5);
+        .upload-box:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        input[type="file"] {
+            display: none;
         }
 
         select {
             width: 100%;
-            padding: 14px;
-            background: rgba(7, 8, 20, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            font-size: 1rem;
-            outline: none;
-            cursor: pointer;
-        }
-
-        select option { background: #070814; color: white; }
-
-        .btn-glow {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(45deg, #00f2fe 0%, #4facfe 100%);
-            border: none;
-            border-radius: 14px;
-            color: #070814;
+            padding: 12px;
+            background: #0B0E14;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            color: var(--text-main);
+            border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif;
             font-size: 1.1rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 25px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0, 242, 254, 0.3);
+            letter-spacing: 1px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .btn-glow:hover {
+        .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 30px rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
         }
 
-        .terminal {
-            flex-grow: 1;
-            background: rgba(5, 6, 15, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 20px;
-            min-height: 180px;
-            max-height: 250px;
-            font-family: 'Courier New', Courier, monospace;
-            color: #a4b1cd;
-            line-height: 1.6;
-            overflow-y: auto;
+        .status-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--accent-cyan);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 10px;
         }
 
         video {
             width: 100%;
-            border-radius: 16px;
-            border: 1px solid var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            margin-bottom: 15px;
             display: none;
-            background: #000;
         }
 
-        .status-badge {
-            align-self: flex-start;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.05);
-            color: #8a8fbc;
+        .log-box {
+            background: #0B0E14;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            height: 180px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #A0AEC0;
         }
 
-        .status-badge.processing { background: rgba(242, 201, 76, 0.15); color: #f2c94c; }
-        .status-badge.ready { background: rgba(39, 174, 96, 0.15); color: #27ae60; }
+        .download-btn {
+            display: none;
+            width: 100%;
+            text-align: center;
+            padding: 12px 0;
+            margin-top: 15px;
+            background: rgba(0, 242, 254, 0.15);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            text-decoration: none;
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <h1>Omniverse</h1>
-        <p>Universal AI Video Language Transmutation Engine</p>
-    </header>
+    <h1>OMNIVERSE</h1>
+    <div class="subtitle">Universal AI Video Language Transmutation Engine</div>
 
     <div class="grid">
-        <div class="panel-left">
-            <label>1. Select Source Video Capsule</label>
-            <div class="upload-zone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-                <span id="uploadLabel">🪐 Drag Video Capsule or Click to Scan</span>
-                <input type="file" id="fileInput" accept="video/*" style="display: none;" onchange="updateFileName()">
+        <!-- Left Side Input Controls -->
+        <div>
+            <div class="section-title">1. SELECT SOURCE VIDEO CAPSULE</div>
+            <div class="upload-box" onclick="document.getElementById('videoInput').click()">
+                <span id="uploadLabel">🛸 Click to select or drop video file</span>
+                <input type="file" id="videoInput" accept="video/*" onchange="updateFileName()">
             </div>
 
-            <label>2. Choose Target Destination Dialect</label>
-            <select id="targetLanguage">
+            <div class="section-title" style="margin-top: 25px;">2. CHOOSE TARGET DESTINATION DIALECT</div>
+            <select id="languageSelect">
                 <option value="English">English</option>
-                <option value="Hindi">Hindi (हिन्दी)</option>
                 <option value="Telugu">Telugu (తెలుగు)</option>
-                <option value="Tamil">Tamil (தமிழ்)</option>
-                <option value="Spanish">Spanish (Español)</option>
-                <option value="French">French (Français)</option>
-                <option value="Japanese">Japanese (日本語)</option>
-                <option value="Korean">Korean (한국어)</option>
             </select>
 
-            <button class="btn-glow" onclick="startTransmutation()">Initiate Transmutation</button>
+            <button class="btn" onclick="startTransmutation()">INITIATE TRANSMUTATION</button>
         </div>
 
-        <div class="panel-right">
-            <label>System Transmutation Output</label>
-            <div class="status-badge" id="statusBadge">Status: Waiting for input</div>
-            
-            <video id="outputVideo" controls></video>
+        <!-- Right Side Output Displays -->
+        <div>
+            <div class="section-title">SYSTEM TRANSMUTATION OUTPUT</div>
+            <div id="statusTag" class="status-tag">STATUS: IDLE</div>
 
-            <div class="terminal" id="terminalOutput">// Standby... awaiting multi-dialect input payload matrix.</div>
+            <video id="videoPlayer" controls></video>
+
+            <div class="log-box" id="transcriptionLog">
+                [Awaiting input stream...]
+            </div>
+
+            <!-- Download Button for Translated Audio MP3 -->
+            <a id="downloadAudioBtn" href="/get-audio" download="translated_audio.mp3" class="download-btn">
+                🎵 DOWNLOAD TRANSLATED AUDIO (.MP3)
+            </a>
         </div>
     </div>
 </div>
 
 <script>
     function updateFileName() {
-        const file = document.getElementById('fileInput').files[0];
-        if (file) document.getElementById('uploadLabel').innerText = `🛸 Ready: ${file.name}`;
+        const input = document.getElementById('videoInput');
+        const label = document.getElementById('uploadLabel');
+        if (input.files.length > 0) {
+            label.innerText = "🛸 Ready: " + input.files[0].name;
+        }
     }
 
     async function startTransmutation() {
-        const fileInput = document.getElementById('fileInput');
-        const language = document.getElementById('targetLanguage').value;
-        const terminal = document.getElementById('terminalOutput');
-        const badge = document.getElementById('statusBadge');
-        const videoPlayer = document.getElementById('outputVideo');
+        const fileInput = document.getElementById('videoInput');
+        const selectedLang = document.getElementById('languageSelect').value;
+        const statusTag = document.getElementById('statusTag');
+        const logBox = document.getElementById('transcriptionLog');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const downloadBtn = document.getElementById('downloadAudioBtn');
 
-        if (!fileInput.files[0]) {
-            alert("Please select a video file capsule first.");
+        if (fileInput.files.length === 0) {
+            alert("Please select a video file first!");
             return;
         }
 
-        // Reset UI state
+        statusTag.innerText = "STATUS: PROCESSING PIPELINE ACTIVE";
+        statusTag.style.color = "#FFB000";
+        logBox.innerHTML = "Processing audio extraction, Whisper AI transcription, " + selectedLang + " translation, and multi-voice TTS...";
         videoPlayer.style.display = "none";
-        videoPlayer.pause();
-        badge.className = "status-badge processing";
-        badge.innerText = "Status: Transmuting Stream...";
-        terminal.innerText = `[SYSTEM CORE]: Processing ${fileInput.files[0].name}...\n[AI ENGINE]: Running Whisper AI Speech Transcription & Translation...`;
+        downloadBtn.style.display = "none";
 
         try {
             const response = await fetch('/process-video', {
                 method: 'POST',
-                headers: { 'X-Target-Language': language },
+                headers: { 
+                    'Content-Type': 'application/octet-stream',
+                    'Target-Language': selectedLang
+                },
                 body: fileInput.files[0]
             });
+
             const data = await response.json();
 
             if (data.status === "success") {
-                // Poll backend for completed translation and dubbed video
                 pollTranslationResult();
             } else {
                 throw new Error(data.message);
             }
         } catch (err) {
-            badge.className = "status-badge";
-            badge.innerText = "Status: Core Failure";
-            terminal.innerText = `[ERROR]: Process failed. Cause: ${err.message}`;
+            statusTag.innerText = "STATUS: ERROR";
+            statusTag.style.color = "#FF4B4B";
+            logBox.innerText = "Error processing video: " + err.message;
         }
     }
 
-    let checkInterval;
-    function pollTranslationResult() {
-        clearInterval(checkInterval);
-        const terminal = document.getElementById('terminalOutput');
-        const badge = document.getElementById('statusBadge');
-        const videoPlayer = document.getElementById('outputVideo');
+    async function pollTranslationResult() {
+        const statusTag = document.getElementById('statusTag');
+        const logBox = document.getElementById('transcriptionLog');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const downloadBtn = document.getElementById('downloadAudioBtn');
 
-        checkInterval = setInterval(async () => {
+        try {
             const res = await fetch('/get-result');
             const data = await res.json();
 
             if (data.translation) {
-                clearInterval(checkInterval);
-                badge.className = "status-badge ready";
-                badge.innerText = "Status: Transmutation Ready";
-                
-                terminal.innerHTML = `<span style="color: var(--neon-cyan)">[WHISPER AI SUCCESS]:</span><br><br>${data.translation}`;
-                
+                logBox.innerHTML = "[SYSTEM SUCCESS]:<br><br>" + data.translation;
+                statusTag.innerText = "STATUS: TRANSMUTATION READY";
+                statusTag.style.color = "#00f2fe";
+
                 if (data.has_video) {
-                    videoPlayer.src = `/get-video?t=${new Date().getTime()}`; // cache buster
+                    videoPlayer.src = "/get-video?t=" + new Date().getTime();
                     videoPlayer.style.display = "block";
-                    videoPlayer.play();
+                }
+
+                if (data.has_audio) {
+                    downloadBtn.style.display = "block";
                 }
             }
-        }, 2000);
+        } catch (err) {
+            console.error("Polling error:", err);
+        }
     }
 </script>
+
 </body>
 </html>
