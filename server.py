@@ -1,4 +1,5 @@
 import os
+import gc
 import subprocess
 from flask import Flask, request, jsonify, send_from_directory, send_file
 import whisper
@@ -6,11 +7,11 @@ from deep_translator import GoogleTranslator
 
 app = Flask(__name__)
 
-# Use relative path suitable for both Windows and Linux cloud servers
 OUTPUT_DIR = os.path.join(os.getcwd(), "output_files")
 
-print("Loading Universal Whisper AI Speech Model...")
-whisper_model = whisper.load_model("small")
+print("Loading Universal Whisper AI Speech Model (Optimized for RAM)...")
+# Changed "small" to "tiny" so Render stays under the 512MB RAM limit!
+whisper_model = whisper.load_model("tiny")
 print("Whisper Model loaded successfully!")
 
 VOICE_POOLS = {
@@ -60,8 +61,8 @@ def process_video():
         ffmpeg_extract = f'ffmpeg -y -i "{input_video_path}" -vn -ac 1 -ar 16000 "{output_audio_path}"'
         subprocess.run(ffmpeg_extract, shell=True, check=True)
 
-        # Step 2: Transcribe Dialogue with Timestamps
-        print("[2/4] Analyzing dialogue lines with Whisper AI...")
+        # Step 2: Transcribe Dialogue lines with Timestamps
+        print("[2/4] Analyzing dialogue timing with Whisper AI...")
         result = whisper_model.transcribe(output_audio_path)
         segments = result.get('segments', [])
 
@@ -71,7 +72,7 @@ def process_video():
         full_text_log = []
         voice_pool = VOICE_POOLS.get(target_lang, VOICE_POOLS["Telugu"])
 
-        # Step 3: Translate & Synthesize Audio with Time-Matching Speed
+        # Step 3: Translate & Synthesize Audio with Speed Sync
         print(f"[3/4] Translating and speed-matching TTS tracks in {target_lang}...")
         for idx, seg in enumerate(segments):
             original_text = seg['text'].strip()
@@ -138,10 +139,12 @@ def process_video():
         latest_translation = "<br>".join(full_text_log)
         print("[SUCCESS]: Processing complete with synchronized duration!\n")
 
+        gc.collect()  # Force RAM cleanup
         return jsonify({"status": "success", "message": "Video processed!"}), 200
         
     except Exception as e:
         print(f"Error: {str(e)}")
+        gc.collect()
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/get-result', methods=['GET'])
