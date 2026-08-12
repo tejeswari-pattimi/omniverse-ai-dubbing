@@ -6,7 +6,8 @@ from deep_translator import GoogleTranslator
 
 app = Flask(__name__)
 
-OUTPUT_DIR = r"C:\Users\Tejeswari\.n8n-files"
+# Use relative path suitable for both Windows and Linux cloud servers
+OUTPUT_DIR = os.path.join(os.getcwd(), "output_files")
 
 print("Loading Universal Whisper AI Speech Model...")
 whisper_model = whisper.load_model("small")
@@ -60,7 +61,7 @@ def process_video():
         subprocess.run(ffmpeg_extract, shell=True, check=True)
 
         # Step 2: Transcribe Dialogue with Timestamps
-        print("[2/4] Analyzing dialogue timing and timestamps with Whisper AI...")
+        print("[2/4] Analyzing dialogue lines with Whisper AI...")
         result = whisper_model.transcribe(output_audio_path)
         segments = result.get('segments', [])
 
@@ -76,12 +77,11 @@ def process_video():
             original_text = seg['text'].strip()
             start_time = seg['start']
             end_time = seg['end']
-            duration = max(1.0, end_time - start_time)  # Target duration in seconds
+            duration = max(1.0, end_time - start_time)
 
             if not original_text:
                 continue
 
-            # Translate to Telugu if selected
             if target_lang == "Telugu":
                 try:
                     translated_text = GoogleTranslator(source='auto', target='te').translate(original_text)
@@ -97,20 +97,15 @@ def process_video():
             
             safe_text = translated_text.replace('"', '').replace("'", "")
             
-            # Synthesize raw audio first
             tts_cmd = f'edge-tts --voice "{voice}" --text "{safe_text}" --write-media "{temp_raw_audio}"'
             subprocess.run(tts_cmd, shell=True, check=True)
 
-            # Calculate actual generated audio length using ffprobe
             probe_cmd = f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{temp_raw_audio}"'
             raw_duration = float(subprocess.check_output(probe_cmd, shell=True).decode().strip())
 
-            # Adjust speed ratio to fit exact original duration
             speed_ratio = raw_duration / duration
-            # Keep speed within realistic limits (0.5x to 2.0x)
             speed_ratio = max(0.6, min(speed_ratio, 1.8))
 
-            # Apply rubberband/atempo filter via ffmpeg to stretch/squeeze audio to target length
             time_sync_cmd = f'ffmpeg -y -i "{temp_raw_audio}" -filter:a "atempo={speed_ratio:.2f}" "{seg_audio_path}"'
             subprocess.run(time_sync_cmd, shell=True, check=True)
 
@@ -131,12 +126,11 @@ def process_video():
         concat_cmd = f'ffmpeg -y -f concat -safe 0 -i "{concat_list_path}" -c copy "{merged_audio_path}"'
         subprocess.run(concat_cmd, shell=True, check=True)
 
-        # Step 4: Map Dubbed Audio to Original Video Duration Exactly
+        # Step 4: Map Dubbed Audio to Video Stream
         print("[4/4] Merging speed-synced audio stream with video...")
         merge_cmd = f'ffmpeg -y -i "{input_video_path}" -i "{merged_audio_path}" -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -shortest "{output_dubbed_video}"'
         subprocess.run(merge_cmd, shell=True, check=True)
 
-        # Cleanup temporary files
         for seg_f in segment_files:
             if os.path.exists(seg_f):
                 os.remove(seg_f)
@@ -178,4 +172,5 @@ def get_audio():
 if __name__ == '__main__':
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
-    app.run(port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
