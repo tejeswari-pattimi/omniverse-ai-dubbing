@@ -1,0 +1,5 @@
+flask
+gunicorn
+SpeechRecognition
+deep-translator
+edge-tts

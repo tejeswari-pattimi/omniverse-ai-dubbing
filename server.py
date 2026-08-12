@@ -25,12 +25,15 @@ def home():
     return send_from_directory('.', 'index.html')
 
 # ------------------------------------------------------------------
-# Video Dubbing Pipeline via Lightweight Cloud APIs (Low RAM)
+# Video Dubbing Pipeline via Lightweight Cloud APIs
 # ------------------------------------------------------------------
 @app.route('/process-video', methods=['POST'])
 def process_video():
     global latest_translation
     try:
+        if not os.path.exists(OUTPUT_DIR):
+            os.makedirs(OUTPUT_DIR)
+
         if not request.data:
             return jsonify({"error": "No binary data received"}), 400
         
@@ -53,7 +56,7 @@ def process_video():
         ffmpeg_extract = f'ffmpeg -y -i "{input_video_path}" -vn -ac 1 -ar 16000 "{extracted_audio_wav}"'
         subprocess.run(ffmpeg_extract, shell=True, check=True)
 
-        # Step 2: Transcribe via Cloud Speech API (Uses minimal RAM)
+        # Step 2: Transcribe via Cloud Speech API
         print("[2/4] Transcribing dialogue with Speech Recognition API...")
         recognizer = sr.Recognizer()
         with sr.AudioFile(extracted_audio_wav) as source:
